@@ -6,6 +6,6 @@ import retrofit2.http.GET;
 import retrofit2.http.Path;
 
 public interface GithubService {
-	  @GET("users/{pseudo}?access_token=26fe2c7c17e6a3998e3f1b4e525f6d51ad736397")
+	  @GET("users/{pseudo}?access_token=github_auth")
 	  Call<GithubUser> getUserInfo(@Path("pseudo") String pseudo);
 }
