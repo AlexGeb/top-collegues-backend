@@ -37,7 +37,10 @@ public class ApplicationStartUpBean {
 		Retrofit retrofit = new Retrofit.Builder().baseUrl("https://api.github.com/")
 				.addConverterFactory(JacksonConverterFactory.create()).client(httpClient.build()).build();
 		GithubService service = retrofit.create(GithubService.class);
-		String github_user_access = System.getenv("github_user_access");
+		
+		String github_user_access = System.getenv("github_user_token");
+		
+		
 		Arrays.asList("AlexGeb", "MAWAAW", "rbonnamy", "thienban", "Melodie44", "Tagpower", "Kazekitai",
 				"AssiaTrabelsi", "roddet").forEach(pseudo -> {
 					Call<GithubUser> callAsync = service.getUserInfo(pseudo, github_user_access);
