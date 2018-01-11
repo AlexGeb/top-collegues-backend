@@ -37,31 +37,31 @@ public class ApplicationStartUpBean {
 		Retrofit retrofit = new Retrofit.Builder().baseUrl("https://api.github.com/")
 				.addConverterFactory(JacksonConverterFactory.create()).client(httpClient.build()).build();
 		GithubService service = retrofit.create(GithubService.class);
-
-		Arrays.asList("AlexGeb", "MAWAAW","rbonnamy","thienban","Melodie44","Tagpower","Kazekitai","AssiaTrabelsi","roddet").forEach(pseudo -> {
-			Call<GithubUser> callAsync = service.getUserInfo(pseudo);
-			callAsync.enqueue(new Callback<GithubUser>() {
-
-				@Override
-				public void onResponse(Call<GithubUser> call, Response<GithubUser> response) {
-					GithubUser user = response.body();
-					if (user != null) {
-						if (!collRepo.findByPseudo(user.getLogin()).isPresent()) {
-							Collegue col = new Collegue();
-							col.setImageUrl(user.getAvatar_url());
-							col.setPseudo(user.getLogin());
-							col.setName(user.getName());
-							collRepo.save(col);
+		String github_user_access = System.getenv("github_user_access");
+		Arrays.asList("AlexGeb", "MAWAAW", "rbonnamy", "thienban", "Melodie44", "Tagpower", "Kazekitai",
+				"AssiaTrabelsi", "roddet").forEach(pseudo -> {
+					Call<GithubUser> callAsync = service.getUserInfo(pseudo, github_user_access);
+					callAsync.enqueue(new Callback<GithubUser>() {
+						@Override
+						public void onResponse(Call<GithubUser> call, Response<GithubUser> response) {
+							GithubUser user = response.body();
+							if (user != null) {
+								if (!collRepo.findByPseudo(user.getLogin()).isPresent()) {
+									Collegue col = new Collegue();
+									col.setImageUrl(user.getAvatar_url());
+									col.setPseudo(user.getLogin());
+									col.setName(user.getName());
+									collRepo.save(col);
+								}
+							}
 						}
-					}
-				}
 
-				@Override
-				public void onFailure(Call<GithubUser> call, Throwable throwable) {
-					System.out.println(throwable);
-				}
-			});
-		});
+						@Override
+						public void onFailure(Call<GithubUser> call, Throwable throwable) {
+							System.out.println(throwable);
+						}
+					});
+				});
 
 	}
 
