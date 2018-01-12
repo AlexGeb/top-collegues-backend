@@ -1,7 +1,5 @@
 package dta.api.controller;
 
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -11,26 +9,36 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.socket.TextMessage;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dta.api.entities.Collegue;
+import dta.api.entities.Vote;
 import dta.api.repository.CollegueRepository;
+import dta.api.repository.VoteRepository;
+import dta.api.services.HistoriqueWebsocketService;
 import dta.api.exceptions.CollegueNotFoundException;
+import dta.api.models.Action;
 
 @RestController
 @RequestMapping("/api/collegues")
 public class ColleguesController {
 
+	@Autowired ObjectMapper objectMapper;
+	
 	private final CollegueRepository collegueRepo;
+	private final VoteRepository voteRepo;
+	private final HistoriqueWebsocketService historiqueWebSocketSvc;
 
-	/**
-	 * @param collaborateursRepo
-	 * @param departementRepo
-	 */
 	@Autowired
-	ColleguesController(CollegueRepository collegueRepo) {
+	ColleguesController(CollegueRepository collegueRepo, VoteRepository voteRepo,
+			HistoriqueWebsocketService historiqueWebSocketSvc) {
 		this.collegueRepo = collegueRepo;
+		this.voteRepo = voteRepo;
+		this.historiqueWebSocketSvc = historiqueWebSocketSvc;
 	}
 
 	@RequestMapping(method = RequestMethod.GET)
@@ -55,20 +63,25 @@ public class ColleguesController {
 
 	@RequestMapping(method = RequestMethod.PATCH, value = "/{pseudo}")
 	public Collegue likeOrHateAction(@PathVariable String pseudo, @RequestBody Map<String, String> action)
-			throws CollegueNotFoundException {
+			throws CollegueNotFoundException, JsonProcessingException {
 		Optional<Collegue> colOpt = collegueRepo.findByPseudo(pseudo);
 		if (colOpt.isPresent()) {
+			Vote vote = new Vote();
 			Collegue col = colOpt.get();
 			if (action.get("action").equals("aimer")) {
 				col.setScore(col.getScore() + 10);
+				vote.setAction(Action.AIMER);
 			} else {
 				col.setScore(col.getScore() - 5);
+				vote.setAction(Action.DETESTER);
 			}
 			collegueRepo.save(col);
+			vote.setVoteFor(col);
+			historiqueWebSocketSvc.sendMessage(new TextMessage(objectMapper.writeValueAsString(vote)));
+			voteRepo.save(vote);
 			return col;
 		} else {
 			throw new CollegueNotFoundException("collegue " + pseudo + " inconnu");
 		}
 	}
-
 }
