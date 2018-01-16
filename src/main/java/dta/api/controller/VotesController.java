@@ -14,7 +14,7 @@ import dta.api.entities.Vote;
 import dta.api.repository.VoteRepository;
 
 @RestController
-@RequestMapping("/api/votes")
+@RequestMapping("votes")
 public class VotesController {
 	private final VoteRepository voteRepo;
 

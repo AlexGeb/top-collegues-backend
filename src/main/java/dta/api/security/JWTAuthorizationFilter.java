@@ -15,7 +15,6 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 
 import io.jsonwebtoken.Jwts;
 
-import static dta.api.security.SecurityConstants.EXPIRATION_TIME;
 import static dta.api.security.SecurityConstants.HEADER_STRING;
 import static dta.api.security.SecurityConstants.SECRET;
 import static dta.api.security.SecurityConstants.TOKEN_PREFIX;

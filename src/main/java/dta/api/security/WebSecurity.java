@@ -23,11 +23,11 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
 	protected void configure(HttpSecurity http) throws Exception {
 		http.headers().frameOptions().disable().and().cors().and().csrf().disable().authorizeRequests()
 				.antMatchers(HttpMethod.POST, SIGN_UP_URL).permitAll().and().authorizeRequests()
-				.antMatchers("/h2-console/**").permitAll().anyRequest().authenticated().and()
+				.antMatchers("/h2-console/**","/ws/**","/wss/**").permitAll().anyRequest().authenticated().and()
 				.addFilter(new JWTAuthenticationFilter(authenticationManager()))
 				.addFilter(new JWTAuthorizationFilter(authenticationManager()))
 				// this disables session creation on Spring Security
-				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().formLogin().permitAll().loginProcessingUrl("/api/login");
+				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);//.and().formLogin().loginProcessingUrl("/api/login").permitAll();
 	}
 
 	@Override

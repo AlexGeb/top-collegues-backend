@@ -29,7 +29,7 @@ import dta.api.exceptions.CollegueNotFoundException;
 import dta.api.models.Action;
 
 @RestController
-@RequestMapping("/api/collegues")
+@RequestMapping("collegues")
 public class ColleguesController {
 
 	@Autowired

@@ -11,7 +11,7 @@ import dta.api.entities.Account;
 import dta.api.repository.AccountRepository;
 
 @RestController
-@RequestMapping("api/users")
+@RequestMapping("users")
 public class UserController {
 	@Autowired
 	AccountRepository accountRepository;
