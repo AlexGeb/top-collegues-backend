@@ -4,7 +4,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +23,7 @@ import dta.api.entities.Collegue;
 import dta.api.entities.Vote;
 import dta.api.repository.CollegueRepository;
 import dta.api.repository.VoteRepository;
+import dta.api.services.BackendAvailableService;
 import dta.api.services.HistoriqueWebsocketService;
 import dta.api.exceptions.CollegueNotFoundException;
 import dta.api.models.Action;
@@ -27,8 +32,12 @@ import dta.api.models.Action;
 @RequestMapping("/api/collegues")
 public class ColleguesController {
 
-	@Autowired ObjectMapper objectMapper;
-	
+	@Autowired
+	ObjectMapper objectMapper;
+
+	@Autowired
+	BackendAvailableService availableService;
+
 	private final CollegueRepository collegueRepo;
 	private final VoteRepository voteRepo;
 	private final HistoriqueWebsocketService historiqueWebSocketSvc;
@@ -77,11 +86,21 @@ public class ColleguesController {
 			}
 			collegueRepo.save(col);
 			vote.setVoteFor(col);
-			historiqueWebSocketSvc.sendMessage(new TextMessage(objectMapper.writeValueAsString(vote)));
+			vote.setActualScore(col.getScore());
 			voteRepo.save(vote);
+			historiqueWebSocketSvc.sendMessage(new TextMessage(objectMapper.writeValueAsString(vote)));
 			return col;
 		} else {
 			throw new CollegueNotFoundException("collegue " + pseudo + " inconnu");
+		}
+	}
+
+	@GetMapping("/ping")
+	public void ping(HttpServletResponse response) {
+		if (availableService.isBackendReady()) {
+			response.setStatus(204); // backend ready
+		} else {
+			response.setStatus(503); // service unavailable
 		}
 	}
 }

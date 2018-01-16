@@ -1,6 +1,5 @@
 package dta.api.entities;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import javax.persistence.Column;
@@ -19,8 +18,8 @@ public class Vote {
 	@Column(name = "ID")
 	private Integer id;
 
-	@OneToOne
-	private Collegue voteur;
+	@Column
+	private Integer actualScore;
 
 	@OneToOne
 	private Collegue voteFor;
@@ -43,13 +42,14 @@ public class Vote {
 		this.id = id;
 	}
 
-	public Collegue getVoteur() {
-		return voteur;
+	public Integer getActualScore() {
+		return actualScore;
 	}
 
-	public void setVoteur(Collegue voteur) {
-		this.voteur = voteur;
+	public void setActualScore(Integer actualScore) {
+		this.actualScore = actualScore;
 	}
+
 
 	public Collegue getVoteFor() {
 		return voteFor;

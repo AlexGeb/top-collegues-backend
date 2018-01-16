@@ -1,7 +1,6 @@
 package dta.api.beans;
 
 import java.util.Arrays;
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -10,7 +9,9 @@ import org.springframework.stereotype.Component;
 
 import dta.api.entities.Collegue;
 import dta.api.models.GithubUser;
+import dta.api.repository.AccountRepository;
 import dta.api.repository.CollegueRepository;
+import dta.api.services.BackendAvailableService;
 import dta.api.services.GithubService;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -26,6 +27,12 @@ public class ApplicationStartUpBean {
 	@Autowired
 	private CollegueRepository collRepo;
 
+	@Autowired
+	BackendAvailableService availableService;
+
+	@Autowired
+	AccountRepository accountRepository;
+
 	@EventListener(ApplicationReadyEvent.class)
 	public void initDatabase() {
 		HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
@@ -37,10 +44,9 @@ public class ApplicationStartUpBean {
 		Retrofit retrofit = new Retrofit.Builder().baseUrl("https://api.github.com/")
 				.addConverterFactory(JacksonConverterFactory.create()).client(httpClient.build()).build();
 		GithubService service = retrofit.create(GithubService.class);
-		
+
 		String github_user_access = System.getenv("github_user_token");
-		
-		
+
 		Arrays.asList("AlexGeb", "MAWAAW", "rbonnamy", "thienban", "Melodie44", "Tagpower", "Kazekitai",
 				"AssiaTrabelsi", "roddet").forEach(pseudo -> {
 					Call<GithubUser> callAsync = service.getUserInfo(pseudo, github_user_access);
@@ -57,6 +63,7 @@ public class ApplicationStartUpBean {
 									collRepo.save(col);
 								}
 							}
+							availableService.setIsReady(true);
 						}
 
 						@Override
@@ -65,7 +72,6 @@ public class ApplicationStartUpBean {
 						}
 					});
 				});
-
 	}
 
 }

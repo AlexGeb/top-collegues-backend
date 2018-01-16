@@ -2,7 +2,6 @@ package dta.api.controller;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,7 +31,7 @@ public class VotesController {
 	@RequestMapping(method = RequestMethod.GET, params = { "since" })
 	public List<Vote> getVotes(@RequestParam("since") Optional<Integer> since) {
 		if (since.isPresent()) {
-			return voteRepo.findAll().stream().filter(vote -> vote.getId() > since.get()).collect(Collectors.toList());
+			return voteRepo.findVoteSince(since.get());
 		} else {
 			return voteRepo.findAll();
 		}
