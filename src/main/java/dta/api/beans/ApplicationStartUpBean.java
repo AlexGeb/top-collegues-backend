@@ -1,6 +1,8 @@
 package dta.api.beans;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -9,18 +11,18 @@ import org.springframework.stereotype.Component;
 
 import dta.api.entities.Collegue;
 import dta.api.models.GithubUser;
-import dta.api.repository.AccountRepository;
 import dta.api.repository.CollegueRepository;
 import dta.api.services.BackendAvailableService;
 import dta.api.services.GithubService;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import okhttp3.logging.HttpLoggingInterceptor.Level;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+
 import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
+import rx.Observable;
+import rx.schedulers.Schedulers;
 
 @Component
 public class ApplicationStartUpBean {
@@ -29,10 +31,7 @@ public class ApplicationStartUpBean {
 
 	@Autowired
 	BackendAvailableService availableService;
-
-	@Autowired
-	AccountRepository accountRepository;
-
+ 
 	@EventListener(ApplicationReadyEvent.class)
 	public void initDatabase() {
 		HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
@@ -42,36 +41,34 @@ public class ApplicationStartUpBean {
 		httpClient.addInterceptor(logging);
 
 		Retrofit retrofit = new Retrofit.Builder().baseUrl("https://api.github.com/")
-				.addConverterFactory(JacksonConverterFactory.create()).client(httpClient.build()).build();
+				.addConverterFactory(JacksonConverterFactory.create())
+				.addCallAdapterFactory(RxJavaCallAdapterFactory.create()).client(httpClient.build()).build();
 		GithubService service = retrofit.create(GithubService.class);
 
 		String github_user_access = System.getenv("github_user_token");
+		Observable.from(getObservableList(service, github_user_access))
+				.flatMap(task -> task.observeOn(Schedulers.computation())).subscribe((user) -> {
+					availableService.setIsReady(true);
+				});
+	}
 
-		Arrays.asList("AlexGeb", "MAWAAW", "rbonnamy", "thienban", "Melodie44", "Tagpower", "Kazekitai",
-				"AssiaTrabelsi", "roddet").forEach(pseudo -> {
-					Call<GithubUser> callAsync = service.getUserInfo(pseudo, github_user_access);
-					callAsync.enqueue(new Callback<GithubUser>() {
-						@Override
-						public void onResponse(Call<GithubUser> call, Response<GithubUser> response) {
-							GithubUser user = response.body();
-							if (user != null) {
-								if (!collRepo.findByPseudo(user.getLogin()).isPresent()) {
-									Collegue col = new Collegue();
-									col.setImageUrl(user.getAvatar_url());
-									col.setPseudo(user.getLogin());
-									col.setName(user.getName());
-									collRepo.save(col);
-								}
-							}
-							availableService.setIsReady(true);
-						}
-
-						@Override
-						public void onFailure(Call<GithubUser> call, Throwable throwable) {
-							System.out.println(throwable);
+	private List<Observable<GithubUser>> getObservableList(GithubService service, String github_user_access) {
+		return Arrays.asList("AlexGeb", "MAWAAW", "rbonnamy", "thienban", "Melodie44", "Tagpower", "Kazekitai",
+				"AssiaTrabelsi", "roddet").stream().map(pseudo -> {
+					return service.getUserInfo(pseudo, github_user_access).doOnNext(userInfo -> {
+						if (!collRepo.findByPseudo(userInfo.getLogin()).isPresent()) {
+							collRepo.save(mapGithubUserToCollegue(userInfo));
 						}
 					});
-				});
+				}).collect(Collectors.toList());
+	}
+
+	private Collegue mapGithubUserToCollegue(GithubUser user) {
+		Collegue col = new Collegue();
+		col.setImageUrl(user.getAvatar_url());
+		col.setPseudo(user.getLogin());
+		col.setName(user.getName());
+		return col;
 	}
 
 }
